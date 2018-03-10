@@ -1,4 +1,5 @@
 *~
+my/
 .pypirc
 ~*
 tmp*
@@ -118,3 +119,5 @@ Thumbs.db
 .idea
 fastai/weights.tar
 fastai/weights.tgz
+courses/dl1/hit_nohit.ipynb
+cmds/runall.bat
