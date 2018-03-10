@@ -39,13 +39,13 @@ def plots_from_files(imspaths, figsize=(10,5), rows=1, titles=None, maintitle=No
         plt.imshow(img)
 
 
-def plot_confusion_matrix(cm, classes, normalize=False, title='Confusion matrix', cmap=plt.cm.Blues):
+def plot_confusion_matrix(cm, classes, normalize=False, title='Confusion matrix', cmap=plt.cm.Blues, figsize=None):
     """
     This function prints and plots the confusion matrix.
     Normalization can be applied by setting `normalize=True`.
     (This function is copied from the scikit docs.)
     """
-    plt.figure()
+    plt.figure(figsize=figsize)
     plt.imshow(cm, interpolation='nearest', cmap=cmap)
     plt.title(title)
     plt.colorbar()
@@ -71,7 +71,7 @@ def plots_raw(ims, figsize=(12,6), rows=1, titles=None):
         if titles is not None: sp.set_title(titles[i], fontsize=16)
         plt.imshow(ims[i])
 
-def load_img_id(ds, idx, path): return np.array(PIL.Image.open(path+ds.fnames[idx]))
+def load_img_id(ds, idx, path): return np.array(PIL.Image.open(os.path.join(path, ds.fnames[idx])))
 
 
 class ImageModelResults():
