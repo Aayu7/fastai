@@ -85,14 +85,15 @@ def fit(model, data, epochs, opt, crit, metrics=None, callbacks=None, **kwargs):
 
     for epoch in tnrange(epochs, desc='Epoch'):
         stepper.reset(True)
-        t = tqdm(iter(data.trn_dl), leave=False, total=len(data.trn_dl))
+        #t = tqdm(iter(data.trn_dl), leave=False, total=len(data.trn_dl))
+        t = iter(data.trn_dl)
         for (*x,y) in t:
             batch_num += 1
             for cb in callbacks: cb.on_batch_begin()
             loss = stepper.step(V(x),V(y))###.long())
             avg_loss = avg_loss * avg_mom + loss * (1-avg_mom)
             debias_loss = avg_loss / (1 - avg_mom**batch_num)
-            t.set_postfix(loss=debias_loss)
+            #t.set_postfix(loss=debias_loss)
             stop=False
             for cb in callbacks: stop = stop or cb.on_batch_end(debias_loss)
             if stop: return
