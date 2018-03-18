@@ -1,8 +1,8 @@
 import torch, queue
 from torch.utils.data.sampler import SequentialSampler, RandomSampler, BatchSampler
 from .imports import *
+from .core import *
 import collections,sys,traceback,threading
-import multiprocessing
 
 string_classes = (str, bytes)
 
@@ -28,7 +28,7 @@ def np_collate(batch, pad_idx):
 
 def get_tensor(batch, pin):
     if isinstance(batch, (np.ndarray, np.generic)):
-        batch = torch.from_numpy(batch).contiguous()
+        batch = T(batch).contiguous()
         return batch.pin_memory() if pin else batch
     elif isinstance(batch, string_classes): return batch
     elif isinstance(batch, collections.Mapping):
@@ -72,10 +72,11 @@ class DataLoader(object):
         return res
 
     def __iter__(self):
-        nw = self.num_workers
-        if nw <= 0:
-            nw = multiprocessing.cpu_count() + nw
-        with ThreadPoolExecutor(max_workers=nw) as e:
-            for batch in e.map(self.get_batch, iter(self.batch_sampler)):
+        if self.num_workers==0:
+            for batch in map(self.get_batch, iter(self.batch_sampler)):
                 yield get_tensor(batch, self.pin_memory)
+        else:
+            with ThreadPoolExecutor(max_workers=self.num_workers) as e:
+                for batch in e.map(self.get_batch, iter(self.batch_sampler)):
+                    yield get_tensor(batch, self.pin_memory)
 

@@ -13,7 +13,7 @@ pretrained_settings = {
             'input_range': [0, 1],
             'mean': [0.5, 0.5, 0.5],
             'std': [0.5, 0.5, 0.5],
-            'num_classes': 1001
+            'num_classes': 1000
         },
         'imagenet+background': {
             'url': 'http://data.lip6.fr/cadene/pretrainedmodels/nasnetalarge-a1897284.pth',
@@ -486,9 +486,9 @@ class ReductionCell1(nn.Module):
 
 class NASNetALarge(nn.Module):
 
-    def __init__(self, num_classes=1001):
+    def __init__(self, use_classifer=False, num_classes=1001):
         super(NASNetALarge, self).__init__()
-        self.num_classes = num_classes
+        self.use_classifer,self.num_classes = use_classifer,num_classes
 
         self.conv0 = nn.Sequential()
         self.conv0.add_module('conv', nn.Conv2d(in_channels=3, out_channels=96, kernel_size=3, padding=0, stride=2,
@@ -544,12 +544,11 @@ class NASNetALarge(nn.Module):
                                   in_channels_right=4032, out_channels_right=672)
 
         self.relu = nn.ReLU()
-        self.avg_pool = nn.AvgPool2d(11, stride=1, padding=0)
         self.dropout = nn.Dropout()
         self.last_linear = nn.Linear(4032, self.num_classes)
 
-    def features(self, input):
-        x_conv0 = self.conv0(input)
+    def features(self, x):
+        x_conv0 = self.conv0(x)
         x_stem_0 = self.cell_stem_0(x_conv0)
         x_stem_1 = self.cell_stem_1(x_conv0, x_stem_0)
 
@@ -577,23 +576,21 @@ class NASNetALarge(nn.Module):
         x_cell_15 = self.cell_15(x_cell_14, x_cell_13)
         x_cell_16 = self.cell_16(x_cell_15, x_cell_14)
         x_cell_17 = self.cell_17(x_cell_16, x_cell_15)
-        return x_cell_17
+        return self.relu(x_cell_17)
 
-    def logits(self, features):
-        x = self.relu(features)
-        x = self.avg_pool(x)
+    def classifier(self, x):
+        x = F.adaptive_max_pool2d(x, 1)
         x = x.view(x.size(0), -1)
         x = self.dropout(x)
-        x = self.last_linear(x)
+        return F.log_softmax(self.linear(x))
+
+    def forward(self, x):
+        x = self.features(x)
+        if self.use_classifer: x = self.classifier(x)
         return x
 
-    def forward(self, input):
-        x = self.features(input)
-        x = self.logits(x)
-        return x
 
-
-def nasnetalarge(num_classes=1001, pretrained='imagenet'):
+def nasnetalarge(num_classes=1000, pretrained='imagenet'):
     r"""NASNetALarge model architecture from the
     `"NASNet" <https://arxiv.org/abs/1707.07012>`_ paper.
     """
@@ -621,14 +618,3 @@ def nasnetalarge(num_classes=1001, pretrained='imagenet'):
     else:
         model = NASNetALarge(num_classes=num_classes)
     return model
-
-
-
-if __name__ == "__main__":
-
-    model = NASNetALarge()
-
-    input = Variable(torch.randn(2,3,331,331))
-    output = model(input)
-    print(output.size())
-
