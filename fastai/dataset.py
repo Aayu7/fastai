@@ -252,7 +252,7 @@ class FilesArrayDataset(FilesDataset):
         assert(len(fnames)==len(y))
         super().__init__(fnames, transform, path)
     def get_n(self): return len(self.y)
-    def get_y(self, i): return self.y[i]
+    def get_y(self, i): return self.y[i].astype(np.float32)
     def get_c(self):
         return self.y.shape[1] if len(self.y.shape)>1 else 0
 
